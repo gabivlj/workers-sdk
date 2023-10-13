@@ -1,5 +1,17 @@
 # create-cloudflare
 
+## 2.6.0
+
+### Minor Changes
+
+- [#4116](https://github.com/cloudflare/workers-sdk/pull/4116) [`5ff0ca02`](https://github.com/cloudflare/workers-sdk/commit/5ff0ca021de83add9f9e90ab71758f46311ebd65) Thanks [@jculvey](https://github.com/jculvey)! - Replaces the "prestart" and "predeploy" scripts when using Angular to better support pnpm
+
+### Patch Changes
+
+- [#4141](https://github.com/cloudflare/workers-sdk/pull/4141) [`9b2578aa`](https://github.com/cloudflare/workers-sdk/commit/9b2578aacb50c2be30852881cd4eb740d0b436c3) Thanks [@dependabot](https://github.com/apps/dependabot)! - C3: Bumped `create-svelte` from `5.1.0` to `5.1.1`
+
+* [#4177](https://github.com/cloudflare/workers-sdk/pull/4177) [`2162501a`](https://github.com/cloudflare/workers-sdk/commit/2162501a0aac1ae5800c8e022568fc357a8c7ff6) Thanks [@jculvey](https://github.com/jculvey)! - Relax name validation for projects created with `--existing-script` flag
+
 ## 2.5.0
 
 ### Minor Changes

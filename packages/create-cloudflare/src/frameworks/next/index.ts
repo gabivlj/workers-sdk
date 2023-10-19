@@ -1,7 +1,7 @@
 import { mkdirSync } from "fs";
 import { updateStatus, warn } from "@cloudflare/cli";
+import { processArgument } from "@cloudflare/cli/args";
 import { brandColor, dim } from "@cloudflare/cli/colors";
-import { processArgument } from "helpers/args";
 import { installPackages, runFrameworkGenerator } from "helpers/command";
 import {
 	compatDateFlag,

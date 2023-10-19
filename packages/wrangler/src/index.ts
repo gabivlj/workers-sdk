@@ -4,9 +4,10 @@ import TOML from "@iarna/toml";
 import chalk from "chalk";
 import supportsColor from "supports-color";
 import { ProxyAgent, setGlobalDispatcher } from "undici";
-import makeCLI, { Arguments, CommandModule } from "yargs";
+import makeCLI from "yargs";
 import { version as wranglerVersion } from "../package.json";
 import { ai } from "./ai";
+import { CloudchamberCommand } from "./cloudchamber";
 import { loadDotEnv, readConfig } from "./config";
 import { constellation } from "./constellation";
 import { d1 } from "./d1";
@@ -57,7 +58,7 @@ import { whoami } from "./whoami";
 
 import type { Config } from "./config";
 import type { CommonYargsArgv, CommonYargsOptions } from "./yargs-types";
-import { CloudchamberCommand } from "./cloudchamber";
+import type { Arguments, CommandModule } from "yargs";
 
 const resetColor = "\x1b[0m";
 const fgGreenColor = "\x1b[32m";

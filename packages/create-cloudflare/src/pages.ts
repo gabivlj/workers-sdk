@@ -2,10 +2,10 @@
 import { resolve } from "path";
 import { chdir } from "process";
 import { crash, endSection, startSection } from "@cloudflare/cli";
+import { processArgument } from "@cloudflare/cli/args";
 import { brandColor, dim } from "@cloudflare/cli/colors";
 import { spinner } from "@cloudflare/cli/interactive";
 import { FrameworkMap, supportedFramework } from "frameworks/index";
-import { processArgument } from "helpers/args";
 import { C3_DEFAULTS } from "helpers/cli";
 import { installWrangler, retry, runCommand } from "helpers/command";
 import { readJSON, writeFile } from "helpers/files";

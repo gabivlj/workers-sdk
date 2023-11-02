@@ -7,7 +7,7 @@ import { ProxyAgent, setGlobalDispatcher } from "undici";
 import makeCLI from "yargs";
 import { version as wranglerVersion } from "../package.json";
 import { ai } from "./ai";
-import { CloudchamberCommand } from "./cloudchamber";
+import { cloudchamber } from "./cloudchamber";
 import { loadDotEnv, readConfig } from "./config";
 import { constellation } from "./constellation";
 import { d1 } from "./d1";
@@ -375,9 +375,6 @@ export function createCLIParser(argv: string[]) {
 		routeHandler
 	);
 
-	// wrangler.command(CloudchamberCommand);
-	wrangler.command("cloudchamber", false, CloudchamberCommand);
-
 	// [DEPRECATED] subdomain
 	wrangler.command(
 		"subdomain [name]",
@@ -471,6 +468,11 @@ export function createCLIParser(argv: string[]) {
 	// ai
 	wrangler.command("ai", "🤖 Interact with AI models", (aiYargs) => {
 		return ai(aiYargs.command(subHelp));
+	});
+
+	// cloudchamber
+	wrangler.command("cloudchamber", false, (cloudchamberArgs) => {
+		return cloudchamber(cloudchamberArgs.command(subHelp));
 	});
 
 	// constellation

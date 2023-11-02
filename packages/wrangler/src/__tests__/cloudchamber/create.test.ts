@@ -110,7 +110,7 @@ describe("cloudchamber create", () => {
 		msw.use(
 			rest.post("*/deployments", async (request, response, context) => {
 				expect(await request.text()).toMatchInlineSnapshot(
-					`"{\\"image\\":\\"hello:world\\",\\"location\\":\\"sfo06\\",\\"ssh_public_key_ids\\":[],\\"environment_variables\\":[{\\"name\\":\\"HELLO\\",\\"value\\":\\"WORLD\\"},{\\"name\\":\\"YOU\\",\\"value\\":\\"CONQUERED\\"}],\\"vcpu\\":40,\\"memory\\":\\"300MB\\"}"`
+					`"{\\"image\\":\\"hello:world\\",\\"location\\":\\"sfo06\\",\\"ssh_public_key_ids\\":[\\"1\\"],\\"environment_variables\\":[{\\"name\\":\\"HELLO\\",\\"value\\":\\"WORLD\\"},{\\"name\\":\\"YOU\\",\\"value\\":\\"CONQUERED\\"}],\\"vcpu\\":40,\\"memory\\":\\"300MB\\"}"`
 				);
 				return response.once(context.json(MOCK_DEPLOYMENTS_COMPLEX[0]));
 			})

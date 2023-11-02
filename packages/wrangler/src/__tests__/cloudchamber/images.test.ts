@@ -52,7 +52,7 @@ describe("cloudchamber image", () => {
 			rest.post("*/registries", async (request, response, context) => {
 				expect(await request.json()).toEqual({
 					domain: "docker.io",
-					public: false,
+					is_public: false,
 				});
 				return response.once(
 					context.json({

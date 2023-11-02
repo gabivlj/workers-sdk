@@ -13,16 +13,17 @@ import {
 	promiseSpinner,
 } from "../common";
 import { wrap } from "../helpers/wrap";
-import type { CommonYargsOptions } from "../../yargs-types";
-import type { ImageRegistryPermissions } from "../client";
+import type { Config } from "../../config";
 import type {
-	CommonCloudchamberConfiguration,
-	CloudchamberConfiguration,
-	inferYargsFn,
-} from "../common";
-import type { Argv, CommandModule } from "yargs";
+	CommonYargsArgvJSON,
+	CommonYargsOptions,
+	StrictYargsOptionsToInterfaceJSON,
+} from "../../yargs-types";
+import type { ImageRegistryPermissions } from "../client";
+import type { CommonCloudchamberConfiguration } from "../common";
+import type { CommandModule } from "yargs";
 
-function configureImageRegistryOptionalYargs<T>(yargs: Argv<T>) {
+function configureImageRegistryOptionalYargs(yargs: CommonYargsArgvJSON) {
 	return yargs
 		.option("domain", {
 			description:
@@ -33,6 +34,23 @@ function configureImageRegistryOptionalYargs<T>(yargs: Argv<T>) {
 			description:
 				"If the registry is public and you don't want credentials configured, set this to true",
 			type: "boolean",
+		});
+}
+
+function credentialsImageRegistryYargs(yargs: CommonYargsArgvJSON) {
+	return yargs
+		.positional("domain", { type: "string", demandOption: true })
+		.option("expiration-minutes", {
+			type: "number",
+			default: 15,
+		})
+		.option("push", {
+			type: "boolean",
+			description: "If you want these credentials to be able to push",
+		})
+		.option("pull", {
+			type: "boolean",
+			description: "If you want these credentials to be able to pull",
 		});
 }
 
@@ -50,24 +68,31 @@ export const RegistriesCommand: CommandModule<
 				"Configure Cloudchamber to pull from specific registries",
 				(args) => configureImageRegistryOptionalYargs(args),
 				(args) =>
-					handleFailure<typeof args>(async (imageArgs, config) => {
-						// check we are in CI or if the user wants to just use JSON
-						if (!interactWithUser(config)) {
-							const body = checkEverythingIsSet(imageArgs, [
-								"domain",
-								"public",
-							]);
-							const registry = await ImageRegistriesService.createImageRegistry(
-								{
-									...body,
-								}
-							);
-							console.log(JSON.stringify(registry, null, 4));
-							return;
-						}
+					handleFailure(
+						async (
+							imageArgs: StrictYargsOptionsToInterfaceJSON<
+								typeof configureImageRegistryOptionalYargs
+							>,
+							config
+						) => {
+							// check we are in CI or if the user wants to just use JSON
+							if (!interactWithUser(args)) {
+								const body = checkEverythingIsSet(imageArgs, [
+									"domain",
+									"public",
+								]);
+								const registry =
+									await ImageRegistriesService.createImageRegistry({
+										domain: body.domain,
+										is_public: body.public,
+									});
+								console.log(JSON.stringify(registry, null, 4));
+								return;
+							}
 
-						await handleConfigureImageRegistryCommand(imageArgs, config);
-					})(args)
+							await handleConfigureImageRegistryCommand(args, config);
+						}
+					)(args)
 			)
 			.command(
 				"credentials [domain]",
@@ -90,39 +115,48 @@ export const RegistriesCommand: CommandModule<
 				(args) => {
 					// we don't want any kind of spinners
 					args.json = true;
-					return handleFailure<typeof args>(async (imageArgs, _config) => {
-						if (!imageArgs.pull && !imageArgs.push) {
-							console.error(
-								"You have to specify either --push or --pull in the command."
-							);
+					return handleFailure(
+						async (
+							imageArgs: StrictYargsOptionsToInterfaceJSON<
+								typeof credentialsImageRegistryYargs
+							>,
+							_config
+						) => {
+							if (!imageArgs.pull && !imageArgs.push) {
+								console.error(
+									"You have to specify either --push or --pull in the command."
+								);
 
-							process.exit(1);
+								process.exit(1);
+							}
+
+							const credentials =
+								await ImageRegistriesService.generateImageRegistryCredentials(
+									imageArgs.domain,
+									{
+										expiration_minutes: imageArgs.expirationMinutes,
+										permissions: [
+											...(imageArgs.push ? ["push"] : []),
+											...(imageArgs.pull ? ["pull"] : []),
+										] as ImageRegistryPermissions[],
+									}
+								);
+							console.log(credentials.password);
 						}
-
-						const credentials =
-							await ImageRegistriesService.generateImageRegistryCredentials(
-								imageArgs.domain,
-								{
-									expiration_minutes: imageArgs.expirationMinutes,
-									permissions: [
-										...(imageArgs.push ? ["push"] : []),
-										...(imageArgs.pull ? ["pull"] : []),
-									] as ImageRegistryPermissions[],
-								}
-							);
-						console.log(credentials.password);
-					})(args);
+					)(args);
 				}
 			);
 	},
 };
 
 export async function handleConfigureImageRegistryCommand(
-	args: inferYargsFn<typeof configureImageRegistryOptionalYargs>,
-	_config: CloudchamberConfiguration
+	args: StrictYargsOptionsToInterfaceJSON<
+		typeof configureImageRegistryOptionalYargs
+	>,
+	_config: Config
 ) {
 	startSection("Configure a Docker registry in Cloudflare");
-	const domain = (await processArgument(args, "domain", {
+	const domain = (await processArgument({ domain: args.domain }, "domain", {
 		type: "text",
 		question: "What is the domain of your registry?",
 		validate: (text) => {
@@ -136,7 +170,7 @@ export async function handleConfigureImageRegistryCommand(
 		helpText:
 			"example.com, example-with-port:8080. Remember to not include https!",
 	})) as string;
-	const isPublic = (await processArgument(args, "public", {
+	const isPublic = (await processArgument({ public: args.public }, "public", {
 		type: "confirm",
 		question: "Is the domain public?",
 		label: "is public",

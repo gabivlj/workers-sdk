@@ -3,11 +3,6 @@ import { exit } from "process";
 import { error, logRaw, space, status, updateStatus } from "@cloudflare/cli";
 import { dim, brandColor } from "@cloudflare/cli/colors";
 import { inputPrompt, spinner } from "@cloudflare/cli/interactive";
-import {
-	type ArgumentsCamelCase as ArgumentsCamelCaseRaw,
-	type CamelCaseKey,
-	type Argv,
-} from "yargs";
 import { version as wranglerVersion } from "../../package.json";
 import { readConfig } from "../config";
 import { getConfigCache, purgeConfigCaches } from "../config-cache";
@@ -28,55 +23,27 @@ import { ApiError, DeploymentMutationError, OpenAPI } from "./client";
 import { wrap } from "./helpers/wrap";
 import { idToLocationName, loadAccount } from "./locations";
 import type { Config } from "../config";
-import type { CommonYargsOptions } from "../yargs-types";
+import type {
+	CommonYargsOptions,
+	StrictYargsOptionsToInterfaceJSON,
+} from "../yargs-types";
 import type { EnvironmentVariable, CompleteAccountCustomer } from "./client";
 import type { Arg } from "@cloudflare/cli/interactive";
 
 export type CommonCloudchamberConfiguration = { json: boolean };
+export type CloudchamberCommandConfiguration = CommonCloudchamberConfiguration &
+	CommonYargsOptions & { wranglerConfig: Config };
 
 /**
- * Same as ArgumentsCamelCase from yargs but without $0 and __
- */
-export type ArgumentsCamelCase<T = Record<string, unknown>> = {
-	[key in keyof T as key | CamelCaseKey<key>]: T[key];
-};
-
-export type inferYargs<
-	T,
-	K = T extends Argv<infer R> ? R : never
-> = ArgumentsCamelCase<K>;
-
-export type inferYargsFn<T extends (...args: Argv<T>[]) => unknown> =
-	inferYargs<ReturnType<T>>;
-
-/**
- * Wrapper so it's easy to filter out arguments that we don't want, and parses wrangler configuration.
+ * Wrapper that parses wrangler configuration and authentication.
  * It also wraps exceptions and checks if they are from the RestAPI.
  *
- * Usage:
- * ```
- * 	async (args) =>
- *    handleFailure<typeof args>(async (deploymentArgs, generalConfig) => { // now you have inferred everything until now, and input is sanitized
- *      // code ...
- *    });
- *
- * ```
- * @param cb
- * @returns
  */
 export function handleFailure<
-	T,
-	K = T extends ArgumentsCamelCaseRaw<
-		CommonYargsOptions & CommonCloudchamberConfiguration & infer R
-	>
-		? R
-		: never
+	U,
+	T = U extends StrictYargsOptionsToInterfaceJSON<infer K> ? K : never
 >(
-	cb: (
-		t: ArgumentsCamelCase<K>,
-		config: CommonCloudchamberConfiguration &
-			CommonYargsOptions & { wranglerConfig: Config }
-	) => Promise<void>
+	cb: (t: T, config: Config) => Promise<void>
 ): (
 	t: CommonYargsOptions & T & CommonCloudchamberConfiguration
 ) => Promise<void> {
@@ -87,28 +54,7 @@ export function handleFailure<
 				t as unknown as Parameters<typeof readConfig>[1]
 			);
 			await fillOpenAPIConfiguration(config, t.json);
-			const rawAnyT = { ...t } as Partial<
-				ArgumentsCamelCaseRaw<
-					K & CommonYargsOptions & CommonCloudchamberConfiguration
-				>
-			>;
-			// strip any data that comes from yarg
-			delete rawAnyT["$0"];
-			delete rawAnyT["_"];
-			delete rawAnyT["env"];
-			delete rawAnyT["experimental-json-config"];
-			delete rawAnyT["v"];
-			delete rawAnyT["experimentalJsonConfig"];
-			delete rawAnyT["json"];
-			delete rawAnyT["config"];
-			await cb(rawAnyT as unknown as ArgumentsCamelCase<K>, {
-				json: t.json,
-				config: t.config,
-				"experimental-json-config": t["experimental-json-config"],
-				env: t.env,
-				v: t.v,
-				wranglerConfig: config,
-			});
+			await cb(t, config);
 		} catch (err) {
 			if (!t.json) {
 				throw err;
@@ -224,14 +170,6 @@ export async function fillOpenAPIConfiguration(config: Config, json: boolean) {
 	OpenAPI.HEADERS = headers;
 	await loadAccountSpinner({ json });
 }
-
-export type CloudchamberConfiguration = CommonYargsOptions &
-	CommonCloudchamberConfiguration;
-
-export type ContainerCommandFunction<T> = (
-	args: T,
-	config: CloudchamberConfiguration
-) => Promise<void>;
 
 export function interactWithUser(config: { json?: boolean }): boolean {
 	return !config.json && isInteractive() && !CI.isCI();

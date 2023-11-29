@@ -8,10 +8,10 @@ import type { DeploymentID } from "./DeploymentID";
 import type { DeploymentVersion } from "./DeploymentVersion";
 import type { EnvironmentVariable } from "./EnvironmentVariable";
 import type { Image } from "./Image";
-import type { IPV4 } from "./IPV4";
 import type { ISO8601Timestamp } from "./ISO8601Timestamp";
 import type { LocationID } from "./LocationID";
 import type { MemorySizeWithUnit } from "./MemorySizeWithUnit";
+import type { Network } from "./Network";
 import type { NodeGroup } from "./NodeGroup";
 import type { Placement } from "./Placement";
 import type { Ref } from "./Ref";
@@ -20,7 +20,7 @@ import type { SSHPublicKeyID } from "./SSHPublicKeyID";
 /**
  * A Deployment represents an intent to run one or many containers, with the same image, in a particular location or region.
  */
-export type Deployment = {
+export type DeploymentV2 = {
 	id: DeploymentID;
 	app_id?: ApplicationID;
 	created_at: ISO8601Timestamp;
@@ -36,7 +36,6 @@ export type Deployment = {
 	 * Container environment variables
 	 */
 	environment_variables?: Array<EnvironmentVariable>;
-	ipv4?: IPV4;
 	current_placement?: Placement;
 	placements_ref: Ref;
 	/**
@@ -51,4 +50,5 @@ export type Deployment = {
 	 * The node group of this deployment
 	 */
 	node_group: NodeGroup;
+	network?: Network;
 };
